@@ -1,55 +1,36 @@
-# Sales Insight Dashboard
+# 📊 Data-Driven Web Application
 
-A near real-time data-driven web application built with Flask, SQLite, HTML, CSS, JavaScript, and Chart.js for managing sales records and generating business insights.
+A full-stack web application built using Flask, SQLite, HTML, CSS, and JavaScript to manage, analyze, and visualize sales data.
 
-## Features
+## 🚀 Features
 
-- Responsive web interface
-- Add, view, search, and filter sales records
-- SQLite database integration
-- Python Flask backend
-- Near real-time dashboard updates every 5 seconds
-- Data analytics and visualization using Chart.js
-- Summary cards for:
-  - Total Revenue
-  - Total Orders
-  - Average Order Value
-  - Top Product
-- Insights charts for:
-  - Monthly Revenue
-  - Category-wise Revenue
-  - Top Customers
-  - Top Products
+- Add and manage products and categories
+- Record sales transactions
+- Dynamic filtering and search
+- Real-time dashboard insights
+- Data visualization using Chart.js
+- Category-wise and monthly revenue analysis
+- Top customers and products tracking
 
-## Tech Stack
+## 🛠 Tech Stack
 
 - Frontend: HTML, CSS, JavaScript
-- Backend: Python, Flask
+- Backend: Python (Flask)
 - Database: SQLite
 - Charts: Chart.js
 
-## Project Structure
+## 📸 Screenshots
 
-```text
-sales-insight-dashboard/
-│
-├── app.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-├── LICENSE
-├── database.db
-│
-├── templates/
-│   ├── base.html
-│   ├── dashboard.html
-│   └── records.html
-│
-├── static/
-│   ├── style.css
-│   └── script.js
-│
-└── screenshots/
-    ├── dashboard.png
-    ├── records.png
-    └── analytics.png
+### Dashboard
+![Dashboard](screenshots/dashboard.png)
+
+### Records Page
+![Records](screenshots/records.png)
+
+## ⚙️ Setup Instructions
+
+```bash
+git clone https://github.com/your-username/data-driven-web-app.git
+cd data-driven-web-app
+pip install -r requirements.txt
+python app.py

@@ -16,16 +16,68 @@ def init_db():
     cursor = conn.cursor()
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category_id INTEGER NOT NULL,
+            UNIQUE(name, category_id),
+            FOREIGN KEY (category_id) REFERENCES categories(id)
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS sales_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_name TEXT NOT NULL,
-            category TEXT NOT NULL,
+            product_id INTEGER NOT NULL,
             quantity INTEGER NOT NULL,
             price REAL NOT NULL,
             customer_name TEXT NOT NULL,
-            order_date TEXT NOT NULL
+            order_date TEXT NOT NULL,
+            FOREIGN KEY (product_id) REFERENCES products(id)
         )
     """)
+
+    conn.commit()
+
+    # Seed default categories
+    default_categories = ["Electronics", "Furniture", "Stationery"]
+    for category in default_categories:
+        cursor.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category,))
+
+    conn.commit()
+
+    # Fetch category ids
+    category_map = {
+        row["name"]: row["id"]
+        for row in conn.execute("SELECT id, name FROM categories").fetchall()
+    }
+
+    default_products = [
+        ("Laptop", "Electronics"),
+        ("Mouse", "Electronics"),
+        ("Keyboard", "Electronics"),
+        ("Monitor", "Electronics"),
+        ("Desk", "Furniture"),
+        ("Office Chair", "Furniture"),
+        ("Bookshelf", "Furniture"),
+        ("Notebook", "Stationery"),
+        ("Pen Pack", "Stationery")
+    ]
+
+    for product_name, category_name in default_products:
+        category_id = category_map.get(category_name)
+        if category_id:
+            cursor.execute("""
+                INSERT OR IGNORE INTO products (name, category_id)
+                VALUES (?, ?)
+            """, (product_name, category_id))
 
     conn.commit()
     conn.close()
@@ -46,21 +98,18 @@ def records():
     conn = get_db_connection()
 
     if request.method == "POST":
-        product_name = request.form.get("product_name", "").strip()
-        category = request.form.get("category", "").strip()
+        product_id = request.form.get("product_id", "").strip()
         quantity = request.form.get("quantity", "").strip()
         price = request.form.get("price", "").strip()
         customer_name = request.form.get("customer_name", "").strip()
         order_date = request.form.get("order_date", "").strip()
 
-        if all([product_name, category, quantity, price, customer_name, order_date]):
+        if all([product_id, quantity, price, customer_name, order_date]):
             conn.execute("""
-                INSERT INTO sales_data
-                (product_name, category, quantity, price, customer_name, order_date)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO sales_data (product_id, quantity, price, customer_name, order_date)
+                VALUES (?, ?, ?, ?, ?)
             """, (
-                product_name,
-                category,
+                int(product_id),
                 int(quantity),
                 float(price),
                 customer_name,
@@ -75,28 +124,44 @@ def records():
     category_filter = request.args.get("category", "").strip()
 
     query = """
-        SELECT *, ROUND(quantity * price, 2) AS revenue
-        FROM sales_data
+        SELECT s.id,
+               p.name AS product_name,
+               c.name AS category_name,
+               s.quantity,
+               s.price,
+               s.customer_name,
+               s.order_date,
+               ROUND(s.quantity * s.price, 2) AS revenue
+        FROM sales_data s
+        JOIN products p ON s.product_id = p.id
+        JOIN categories c ON p.category_id = c.id
         WHERE 1=1
     """
     params = []
 
     if search:
-        query += " AND (product_name LIKE ? OR customer_name LIKE ?)"
+        query += " AND (p.name LIKE ? OR s.customer_name LIKE ?)"
         params.extend([f"%{search}%", f"%{search}%"])
 
     if category_filter:
-        query += " AND category = ?"
+        query += " AND c.id = ?"
         params.append(category_filter)
 
-    query += " ORDER BY order_date DESC, id DESC"
+    query += " ORDER BY s.order_date DESC, s.id DESC"
 
     rows = conn.execute(query, params).fetchall()
 
     categories = conn.execute("""
-        SELECT DISTINCT category
-        FROM sales_data
-        ORDER BY category
+        SELECT id, name
+        FROM categories
+        ORDER BY name
+    """).fetchall()
+
+    products = conn.execute("""
+        SELECT p.id, p.name, p.category_id, c.name AS category_name
+        FROM products p
+        JOIN categories c ON p.category_id = c.id
+        ORDER BY c.name, p.name
     """).fetchall()
 
     conn.close()
@@ -105,9 +170,111 @@ def records():
         "records.html",
         records=rows,
         categories=categories,
+        products=products,
         search=search,
         category_filter=category_filter
     )
+
+
+@app.route("/masters", methods=["GET"])
+def masters():
+    conn = get_db_connection()
+
+    categories = conn.execute("""
+        SELECT id, name
+        FROM categories
+        ORDER BY name
+    """).fetchall()
+
+    products = conn.execute("""
+        SELECT p.id, p.name, c.name AS category_name, c.id AS category_id
+        FROM products p
+        JOIN categories c ON p.category_id = c.id
+        ORDER BY c.name, p.name
+    """).fetchall()
+
+    conn.close()
+
+    return render_template("masters.html", categories=categories, products=products)
+
+
+@app.route("/add-category", methods=["POST"])
+def add_category():
+    category_name = request.form.get("category_name", "").strip()
+    if category_name:
+        conn = get_db_connection()
+        conn.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category_name,))
+        conn.commit()
+        conn.close()
+    return redirect(url_for("masters"))
+
+
+@app.route("/delete-category/<int:category_id>", methods=["POST"])
+def delete_category(category_id):
+    conn = get_db_connection()
+
+    product_count = conn.execute(
+        "SELECT COUNT(*) AS count FROM products WHERE category_id = ?",
+        (category_id,)
+    ).fetchone()["count"]
+
+    if product_count == 0:
+        conn.execute("DELETE FROM categories WHERE id = ?", (category_id,))
+        conn.commit()
+
+    conn.close()
+    return redirect(url_for("masters"))
+
+
+@app.route("/add-product", methods=["POST"])
+def add_product():
+    product_name = request.form.get("product_name", "").strip()
+    category_id = request.form.get("category_id", "").strip()
+
+    if product_name and category_id:
+        conn = get_db_connection()
+        conn.execute("""
+            INSERT OR IGNORE INTO products (name, category_id)
+            VALUES (?, ?)
+        """, (product_name, int(category_id)))
+        conn.commit()
+        conn.close()
+
+    return redirect(url_for("masters"))
+
+
+@app.route("/delete-product/<int:product_id>", methods=["POST"])
+def delete_product(product_id):
+    conn = get_db_connection()
+
+    sales_count = conn.execute(
+        "SELECT COUNT(*) AS count FROM sales_data WHERE product_id = ?",
+        (product_id,)
+    ).fetchone()["count"]
+
+    if sales_count == 0:
+        conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
+        conn.commit()
+
+    conn.close()
+    return redirect(url_for("masters"))
+
+
+@app.route("/api/products-by-category/<int:category_id>")
+def products_by_category(category_id):
+    conn = get_db_connection()
+    products = conn.execute("""
+        SELECT id, name
+        FROM products
+        WHERE category_id = ?
+        ORDER BY name
+    """, (category_id,)).fetchall()
+    conn.close()
+
+    return jsonify([
+        {"id": row["id"], "name": row["name"]}
+        for row in products
+    ])
 
 
 @app.route("/delete/<int:record_id>", methods=["POST"])
@@ -139,18 +306,26 @@ def api_summary():
     """).fetchone()["avg_order_value"]
 
     top_product_row = conn.execute("""
-        SELECT product_name, SUM(quantity) AS total_qty
-        FROM sales_data
-        GROUP BY product_name
+        SELECT p.name AS product_name, SUM(s.quantity) AS total_qty
+        FROM sales_data s
+        JOIN products p ON s.product_id = p.id
+        GROUP BY p.name
         ORDER BY total_qty DESC
         LIMIT 1
     """).fetchone()
 
     recent_records = conn.execute("""
-        SELECT *,
-               ROUND(quantity * price, 2) AS revenue
-        FROM sales_data
-        ORDER BY order_date DESC, id DESC
+        SELECT p.name AS product_name,
+               c.name AS category_name,
+               s.customer_name,
+               s.quantity,
+               s.price,
+               ROUND(s.quantity * s.price, 2) AS revenue,
+               s.order_date
+        FROM sales_data s
+        JOIN products p ON s.product_id = p.id
+        JOIN categories c ON p.category_id = c.id
+        ORDER BY s.order_date DESC, s.id DESC
         LIMIT 5
     """).fetchall()
 
@@ -164,7 +339,7 @@ def api_summary():
         "recent_records": [
             {
                 "product_name": row["product_name"],
-                "category": row["category"],
+                "category_name": row["category_name"],
                 "customer_name": row["customer_name"],
                 "quantity": row["quantity"],
                 "price": row["price"],
@@ -189,10 +364,12 @@ def api_insights():
     """).fetchall()
 
     category_sales = conn.execute("""
-        SELECT category,
-               ROUND(SUM(quantity * price), 2) AS revenue
-        FROM sales_data
-        GROUP BY category
+        SELECT c.name AS category,
+               ROUND(SUM(s.quantity * s.price), 2) AS revenue
+        FROM sales_data s
+        JOIN products p ON s.product_id = p.id
+        JOIN categories c ON p.category_id = c.id
+        GROUP BY c.name
         ORDER BY revenue DESC
     """).fetchall()
 
@@ -206,10 +383,11 @@ def api_insights():
     """).fetchall()
 
     top_products = conn.execute("""
-        SELECT product_name,
-               SUM(quantity) AS total_quantity
-        FROM sales_data
-        GROUP BY product_name
+        SELECT p.name AS product_name,
+               SUM(s.quantity) AS total_quantity
+        FROM sales_data s
+        JOIN products p ON s.product_id = p.id
+        GROUP BY p.name
         ORDER BY total_quantity DESC
         LIMIT 5
     """).fetchall()

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-hero">
+    <div>
+        <p class="hero-kicker">Business Overview</p>
+        <h1 class="hero-title">Sales Dashboard</h1>
+        <p class="hero-subtitle">
+            Monitor revenue, orders, customers, and product performance with a polished analytics view.
+        </p>
+    </div>
+</div>
+
+<section class="premium-stats-grid">
+    <div class="premium-stat-card gradient-blue">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Total Revenue</p>
+                <h3 id="totalRevenue">₹ 0</h3>
+            </div>
+            <div class="stat-icon">₹</div>
+        </div>
+        <p class="stat-foot">Overall business revenue</p>
+    </div>
+
+    <div class="premium-stat-card gradient-indigo">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Total Orders</p>
+                <h3 id="totalOrders">0</h3>
+            </div>
+            <div class="stat-icon">🧾</div>
+        </div>
+        <p class="stat-foot">Total completed transactions</p>
+    </div>
+
+    <div class="premium-stat-card gradient-cyan">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Average Order Value</p>
+                <h3 id="avgOrderValue">₹ 0</h3>
+            </div>
+            <div class="stat-icon">📈</div>
+        </div>
+        <p class="stat-foot">Revenue earned per order</p>
+    </div>
+
+    <div class="premium-stat-card gradient-dark">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Top Product</p>
+                <h3 id="topProduct">N/A</h3>
+            </div>
+            <div class="stat-icon">🏆</div>
+        </div>
+        <p class="stat-foot">Best-selling product</p>
+    </div>
+</section>
+
+<section class="premium-charts-grid">
+    <div class="premium-panel">
+        <div class="premium-panel-header">
+            <div>
+                <p class="panel-kicker">Trend Analysis</p>
+                <h2>Monthly Revenue</h2>
+            </div>
+            <span class="panel-chip">Bar Chart</span>
+        </div>
+        <div class="chart-shell">
+            <canvas id="monthlyRevenueChart"></canvas>
+        </div>
+    </div>
+
+    <div class="premium-panel">
+        <div class="premium-panel-header">
+            <div>
+                <p class="panel-kicker">Revenue Split</p>
+                <h2>Category-wise Revenue</h2>
+            </div>
+            <span class="panel-chip">Doughnut</span>
+        </div>
+        <div class="chart-shell">
+            <canvas id="categoryRevenueChart"></canvas>
+        </div>
+    </div>
+
+    <div class="premium-panel">
+        <div class="premium-panel-header">
+            <div>
+                <p class="panel-kicker">Customer Insights</p>
+                <h2>Top Customers</h2>
+            </div>
+            <span class="panel-chip">Top 5</span>
+        </div>
+        <div class="chart-shell">
+            <canvas id="topCustomersChart"></canvas>
+        </div>
+    </div>
+
+    <div class="premium-panel">
+        <div class="premium-panel-header">
+            <div>
+                <p class="panel-kicker">Product Insights</p>
+                <h2>Top Products</h2>
+            </div>
+            <span class="panel-chip">Line Chart</span>
+        </div>
+        <div class="chart-shell">
+            <canvas id="topProductsChart"></canvas>
+        </div>
+    </div>
+</section>
+
+<section class="premium-panel">
+    <div class="premium-panel-header">
+        <div>
+            <p class="panel-kicker">Transactions</p>
+            <h2>Recent Records</h2>
+        </div>
+        <span class="panel-chip">Latest 5</span>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Customer</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Revenue</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="recentRecordsTable">
+                <tr>
+                    <td colspan="7" class="empty-state">Loading records...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

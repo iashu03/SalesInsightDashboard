@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="page-kicker">Master Data</p>
+        <h1 class="page-title">Manage Products & Categories</h1>
+        <p class="page-subtitle">Control your product catalog and category structure from one place.</p>
+    </div>
+</div>
+
+<div class="section-grid">
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <p class="panel-kicker">Category Setup</p>
+                <h2>Add Category</h2>
+            </div>
+            <span class="panel-badge">Master Data</span>
+        </div>
+
+        <form action="{{ url_for('add_category') }}" method="POST" class="form-grid compact-grid">
+            <div class="form-group">
+                <label for="category_name">Category Name</label>
+                <input id="category_name" type="text" name="category_name" placeholder="Enter new category" required>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="primary-btn">Add Category</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <p class="panel-kicker">Product Setup</p>
+                <h2>Add Product</h2>
+            </div>
+            <span class="panel-badge soft">Linked to Category</span>
+        </div>
+
+        <form action="{{ url_for('add_product') }}" method="POST" class="form-grid compact-grid">
+            <div class="form-group">
+                <label for="product_name">Product Name</label>
+                <input id="product_name" type="text" name="product_name" placeholder="Enter new product" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category_id">Select Category</label>
+                <select name="category_id" id="category_id" required>
+                    <option value="">Select Category</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="primary-btn">Add Product</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<div class="section-grid">
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <p class="panel-kicker">Category Overview</p>
+                <h2>Category List</h2>
+            </div>
+            <span class="panel-badge">{{ categories|length }} Total</span>
+        </div>
+
+        <div class="stack-list">
+            {% if categories %}
+                {% for category in categories %}
+                <div class="stack-item">
+                    <div class="stack-item-content">
+                        <strong>{{ category.name }}</strong>
+                        <div class="item-meta">Business grouping for products</div>
+                    </div>
+                    <form action="{{ url_for('delete_category', category_id=category.id) }}" method="POST" onsubmit="return confirm('Delete this category? Only empty categories can be removed.')">
+                        <button type="submit" class="danger-btn">Delete</button>
+                    </form>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-card">No categories available.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <p class="panel-kicker">Product Overview</p>
+                <h2>Product List</h2>
+            </div>
+            <span class="panel-badge">{{ products|length }} Total</span>
+        </div>
+
+        <div class="stack-list">
+            {% if products %}
+                {% for product in products %}
+                <div class="stack-item">
+                    <div class="stack-item-content">
+                        <strong>{{ product.name }}</strong>
+                        <div class="item-meta">{{ product.category_name }}</div>
+                    </div>
+                    <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" onsubmit="return confirm('Delete this product? Only unused products can be removed.')">
+                        <button type="submit" class="danger-btn">Delete</button>
+                    </form>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-card">No products available.</div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

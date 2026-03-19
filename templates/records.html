@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Manage Records</h1>
+        <p class="page-subtitle">Add sales entries, search records, and track transactions cleanly.</p>
+    </div>
+</div>
+
+<div class="section-grid">
+    <section class="panel">
+        <div class="panel-header">
+            <h2>Add New Record</h2>
+            <span class="panel-badge">Live Entry</span>
+        </div>
+
+        <form method="POST" class="form-grid">
+            <div class="form-group">
+                <label for="categorySelect">Category</label>
+                <select name="category_id" id="categorySelect" required>
+                    <option value="">Select Category</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="productSelect">Product</label>
+                <select name="product_id" id="productSelect" required>
+                    <option value="">Select Product</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quantity">Quantity</label>
+                <input id="quantity" type="number" name="quantity" placeholder="Enter quantity" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price</label>
+                <input id="price" type="number" step="0.01" name="price" placeholder="Enter price" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="customer_name">Customer Name</label>
+                <input id="customer_name" type="text" name="customer_name" placeholder="Enter customer name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="order_date">Order Date</label>
+                <input id="order_date" type="date" name="order_date" required>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="primary-btn">Add Record</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2>Search & Filter</h2>
+            <span class="panel-badge soft">Quick View</span>
+        </div>
+
+        <form method="GET" class="form-grid compact-grid">
+            <div class="form-group">
+                <label for="search">Search Product / Customer</label>
+                <input id="search" type="text" name="search" placeholder="Search here..." value="{{ search }}">
+            </div>
+
+            <div class="form-group">
+                <label for="categoryFilter">Filter by Category</label>
+                <select name="category" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if category_filter == (category.id|string) %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="secondary-btn">Apply Filter</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<section class="panel">
+    <div class="panel-header">
+        <h2>All Records</h2>
+        <span class="panel-badge">{{ records|length }} Entries</span>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Customer</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Revenue</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if records %}
+                    {% for row in records %}
+                    <tr>
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.product_name }}</td>
+                        <td>{{ row.category_name }}</td>
+                        <td>{{ row.customer_name }}</td>
+                        <td>{{ row.quantity }}</td>
+                        <td>₹ {{ row.price }}</td>
+                        <td>₹ {{ row.revenue }}</td>
+                        <td>{{ row.order_date }}</td>
+                        <td>
+                            <form action="{{ url_for('delete_record', record_id=row.id) }}" method="POST" onsubmit="return confirm('Delete this record?')">
+                                <button type="submit" class="danger-btn">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="empty-state">No records available yet. Add your first sales entry above.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
