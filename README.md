@@ -86,7 +86,7 @@ SalesInsightDashboard/
 
 ### 🛠 Manage Products
 
-![Masters](screenshots/masters.png)
+![Masters](screenshots/master.png)
 
 ---
 
